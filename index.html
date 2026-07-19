@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Service Zeit</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #0b0e11;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            color: #e8edf3;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: #1a1f26;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            border: 1px solid #2a3038;
+            transition: all 0.2s;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .card-subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .status-bar {
+            background: #11161e;
+            border-radius: 10px;
+            padding: 10px 16px;
+            text-align: center;
+            font-size: 15px;
+            color: #94a3b8;
+            border: 1px solid #1e293b;
+        }
+
+        .status-bar .status-text {
+            font-weight: 500;
+        }
+
+        /* ===== PULL-TO-REFRESH ===== */
+        .pull-container {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pull-indicator {
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+            padding: 8px 0;
+            transform: translateY(-40px);
+            transition: transform 0.2s;
+        }
+
+        .pull-indicator.active {
+            transform: translateY(0);
+        }
+
+        .pull-indicator .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2a3038;
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: #11161e;
+            border: 1px solid #2a3038;
+            border-radius: 10px;
+            color: #e8edf3;
+            font-size: 16px;
+            margin-bottom: 10px;
+            transition: border 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-blue {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-blue:hover {
+            background: #3b82f6;
+        }
+
+        .btn-green {
+            background: #16a34a;
+            color: white;
+        }
+        .btn-green:hover {
+            background: #22c55e;
+        }
+
+        .btn-red {
+            background: #dc2626;
+            color: white;
+        }
+        .btn-red:hover {
+            background: #ef4444;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 8px;
+            width: 100%;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #2a3038;
+        }
+        .btn-ghost:hover {
+            background: #1e293b;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .entry-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: stretch;
+            flex-shrink: 0;
+            margin-left: 12px;
+            min-width: 90px;
+        }
+
+        .entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            background: #11161e;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #1e293b;
+            transition: border 0.2s;
+        }
+
+        .entry:hover {
+            border-color: #334155;
+        }
+
+        .entry .info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entry .name {
+            font-size: 17px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .entry .street {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .entry .status {
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .text-muted {
+            color: #64748b;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0e11;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3038;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b4654;
+        }
+
+        .badge-running {
+            background: #dc2626;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            animation: pulse 1.5s infinite;
+            display: inline-block;
+            text-align: center;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .entry-actions .badge-running {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TITEL -->
+    <div class="card">
+        <div class="card-title">🔧 Service Zeit 🔧</div>
+        <div class="card-subtitle">© 2026 H. Neuhaus</div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar">
+        <span id="status" class="status-text">📡 Lade Daten...</span>
+    </div>
+
+    <!-- PULL-TO-REFRESH CONTAINER -->
+    <div class="pull-container" id="pullContainer">
+        <div class="pull-indicator" id="pullIndicator">
+            <span class="spinner"></span> Aktualisiere...
+        </div>
+
+        <!-- EINGABE -->
+        <div class="card">
+            <input id="inputName" type="text" placeholder="👤 Kunde / Firma" />
+            <input id="inputStreet" type="text" placeholder="📍 Straße / Ort" />
+            <div class="row">
+                <button class="btn btn-blue" onclick="save()">➕ NEUER AUFTRAG</button>
+                <button class="btn btn-red" onclick="deleteDay()">🗑️ TAG LÖSCHEN</button>
+            </div>
+        </div>
+
+        <!-- LISTE -->
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h3 style="font-size:18px; font-weight:600; color:#e8edf3;">📋 Aufträge</h3>
+                <span id="countBadge" style="background:#1e293b; padding:4px 14px; border-radius:20px; font-size:13px; color:#94a3b8;">0</span>
+            </div>
+            <div id="entries"></div>
+        </div>
+    </div>
+
+    <script>
+        // ===== SUPABASE =====
+        const SUPABASE_URL = "https://whcqneawuvwbyottsvjn.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndoY3FuZWF3dXZ3YnlvdHRzdmpuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDQyMzY3OSwiZXhwIjoyMDk5OTk5Njc5fQ.cqeqbLu6ikrAYvJoSI3BP7F4lwXb--GuLB33xkevQsk";
+
+        const headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json"
+        };
+
+        let auftraege = [];
+        let refreshInterval = null;
+
+        // ===== HILFSFUNKTIONEN =====
+        function jetztLokalISO() {
+            const now = new Date();
+            const offset = now.getTimezoneOffset();
+            const sign = offset > 0 ? '-' : '+';
+            const h = String(Math.abs(Math.floor(offset / 60))).padStart(2, '0');
+            const m = String(Math.abs(offset % 60)).padStart(2, '0');
+            const tz = `${sign}${h}:${m}`;
+            const y = now.getFullYear();
+            const mo = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            return `${y}-${mo}-${d}T${hh}:${mm}:${ss}${tz}`;
+        }
+
+        function parseDatum(str) {
+            if (!str) return null;
+            try { return new Date(str); } catch { return null; }
+        }
+
+        function dauerAnzeigen(sek) {
+            if (!sek || sek < 0) return '0 Min';
+            const min = Math.floor(sek / 60);
+            const std = Math.floor(min / 60);
+            const restMin = min % 60;
+            if (std === 0) return `${restMin} Min`;
+            if (restMin === 0) return `${std} Std`;
+            return `${std} Std ${restMin} Min`;
+        }
+
+        function statusColor(status) {
+            return status === 0 ? '#94a3b8' : status === 1 ? '#ef4444' : '#22c55e';
+        }
+
+        function statusText(status) {
+            return status === 0 ? '⏸ Bereit' : status === 1 ? '🔴 Läuft' : '✅ Fertig';
+        }
+
+        // ===== AUTO-REFRESH =====
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(() => {
+                refreshDataSilent();
+            }, 60000); // 60 Sekunden
+        }
+
+        function resetAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                startAutoRefresh();
+            }
+        }
+
+        // ===== DATEN LADEN (mit Status) =====
+        async function loadData() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/auftraege?select=*&order=erstellt_am.asc`, { headers });
+                if (res.ok) {
+                    auftraege = await res.json();
+                    setStatus(`✅ ${auftraege.length} Aufträge geladen`, '#22c55e');
+                    renderList();
+                } else {
+                    setStatus(`❌ Fehler: ${res.status}`, '#ef4444');
+                }
+            } catch (e) {
+                setStatus(`❌ Fehler: ${e.message}`, '#ef4444');
+            }
+        }
+
+        // ===== DATEN LADEN (silent, für Auto-Refresh) =====
+        async function refreshDataSilent() {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/auftraege?select=*&order=erstellt_am.asc`, { headers });
+                if (res.ok) {
+                    auftraege = await res.json();
+                    renderList();
+                    const heute = new Date().toISOString().slice(0, 10);
+                    const rows = auftraege.filter(a => a.tag === heute);
+                    document.getElementById('countBadge').textContent = rows.length;
+                }
+            } catch (e) {
+                // Silent fail – beim nächsten Versuch klappt's
+            }
+        }
+
+        // ===== LISTE ANZEIGEN =====
+        function renderList() {
+            const container = document.getElementById('entries');
+            const heute = new Date().toISOString().slice(0, 10);
+            const rows = auftraege.filter(a => a.tag === heute);
+
+            document.getElementById('countBadge').textContent = rows.length;
+
+            if (rows.length === 0) {
+                container.innerHTML = `<div class="text-muted" style="text-align:center; padding:20px;">📭 Keine Aufträge für heute</div>`;
+                return;
+            }
+
+            container.innerHTML = rows.map(a => {
+                let dauerText = '';
+                if (a.status === 1 && a.startzeit) {
+                    const start = parseDatum(a.startzeit);
+                    if (start) {
+                        const diff = Math.floor((new Date() - start) / 1000);
+                        dauerText = ` (${dauerAnzeigen(diff)})`;
+                    }
+                } else if (a.status === 2 && a.dauer) {
+                    dauerText = ` (${dauerAnzeigen(a.dauer)})`;
+                }
+
+                let actionsHtml = '';
+                if (a.status === 0) {
+                    actionsHtml = `
+                        <button class="btn btn-green btn-sm" onclick="startJob(${a.id})">▶️ STARTEN</button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteJob(${a.id})" style="color:#94a3b8;">🗑️ LÖSCHEN</button>
+                    `;
+                } else if (a.status === 1) {
+                    actionsHtml = `
+                        <span class="badge-running">LIVE</span>
+                        <button class="btn btn-red btn-sm" onclick="stopJob(${a.id})">⏹ STOPPEN</button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteJob(${a.id})" style="color:#94a3b8;">🗑️ LÖSCHEN</button>
+                    `;
+                } else {
+                    actionsHtml = `
+                        <span style="color:#22c55e; font-weight:600; text-align:center;">✔️ Erledigt</span>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteJob(${a.id})" style="color:#94a3b8;">🗑️ LÖSCHEN</button>
+                    `;
+                }
+
+                return `
+                    <div class="entry">
+                        <div class="info">
+                            <div class="name">${a.kunde}</div>
+                            ${a.strasse ? `<div class="street">${a.strasse}</div>` : ''}
+                            <div class="status" style="color:${statusColor(a.status)}">
+                                ${statusText(a.status)}${dauerText}
+                            </div>
+                        </div>
+                        <div class="entry-actions">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ===== SPEICHERN =====
+        async function save() {
+            const name = document.getElementById('inputName').value.trim();
+            const street = document.getElementById('inputStreet').value.trim();
+            if (!name) { setStatus('❌ Bitte Name eingeben!', '#ef4444'); return; }
+
+            const data = {
+                kunde: name,
+                strasse: street || '',
+                status: 0,
+                tag: new Date().toISOString().slice(0, 10)
+            };
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/auftraege`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    setStatus(`✅ Auftrag erfasst: ${name}`, '#22c55e');
+                    document.getElementById('inputName').value = '';
+                    document.getElementById('inputStreet').value = '';
+                    await loadData();
+                } else {
+                    setStatus(`❌ Fehler: ${res.status}`, '#ef4444');
+                }
+            } catch (e) {
+                setStatus(`❌ Fehler: ${e.message}`, '#ef4444');
+            }
+        }
+
+        // ===== STARTEN =====
+        async function startJob(id) {
+            try {
+                const startzeit = jetztLokalISO();
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/auftraege?id=eq.${id}`, {
+                    method: 'PATCH',
+                    headers,
+                    body: JSON.stringify({ status: 1, startzeit, endzeit: null, dauer: 0 })
+                });
+                if (res.ok) {
+                    setStatus('▶️ Auftrag gestartet', '#22c55e');
+                    await loadData();
+                } else {
+                    setStatus(`❌ Fehler beim Starten: ${res.status}`, '#ef4444');
+                }
+            } catch (e) {
+                setStatus(`❌ Fehler: ${e.message}`, '#ef4444');
+            }
+        }
+
+        // ===== STOPPEN =====
+        async function stopJob(id) {
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/auftraege?id=eq.${id}`, { headers });
+                const data = await res.json();
+                if (data.length && data[0].startzeit) {
+                    const start = parseDatum(data[0].startzeit);
+                    if (!start) { setStatus('❌ Keine gültige Startzeit', '#ef4444'); return; }
+                    const end = new Date();
+                    const dauer = Math.floor((end - start) / 1000);
+                    const endzeit = jetztLokalISO();
+
+                    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/auftraege?id=eq.${id}`, {
+                        method: 'PATCH',
+                        headers,
+                        body: JSON.stringify({ status: 2, endzeit, dauer })
+                    });
+                    if (updateRes.ok) {
+                        setStatus(`⏹ Auftrag gestoppt (${dauerAnzeigen(dauer)})`, '#f59e0b');
+                        await loadData();
+                    } else {
+                        setStatus(`❌ Fehler beim Stoppen: ${updateRes.status}`, '#ef4444');
+                    }
+                } else {
+                    setStatus('❌ Keine Startzeit gefunden', '#ef4444');
+                }
+            } catch (e) {
+                setStatus(`❌ Fehler: ${e.message}`, '#ef4444');
+            }
+        }
+
+        // ===== LÖSCHEN =====
+        async function deleteJob(id) {
+            if (!confirm('Diesen Auftrag wirklich löschen?')) return;
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/auftraege?id=eq.${id}`, { method: 'DELETE', headers });
+                setStatus('🗑️ Auftrag gelöscht', '#f59e0b');
+                await loadData();
+            } catch (e) {
+                setStatus(`❌ Fehler: ${e.message}`, '#ef4444');
+            }
+        }
+
+        async function deleteDay() {
+            if (!confirm('Alle Aufträge von HEUTE löschen?')) return;
+            const heute = new Date().toISOString().slice(0, 10);
+            try {
+                await fetch(`${SUPABASE_URL}/rest/v1/auftraege?tag=eq.${heute}`, { method: 'DELETE', headers });
+                setStatus('🗑️ Tag gelöscht', '#f59e0b');
+                await loadData();
+            } catch (e) {
+                setStatus(`❌ Fehler: ${e.message}`, '#ef4444');
+            }
+        }
+
+        function setStatus(msg, color) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.style.color = color;
+        }
+
+        // ===== PULL-TO-REFRESH =====
+        let touchStartY = 0;
+        let isPulling = false;
+        const pullThreshold = 80;
+
+        document.addEventListener('touchstart', (e) => {
+            if (window.scrollY === 0) {
+                touchStartY = e.touches[0].clientY;
+                isPulling = true;
+            }
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+            const diff = e.touches[0].clientY - touchStartY;
+            const indicator = document.getElementById('pullIndicator');
+            if (diff > pullThreshold) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            if (!isPulling) return;
+            isPulling = false;
+            const indicator = document.getElementById('pullIndicator');
+            if (indicator.classList.contains('active')) {
+                indicator.classList.remove('active');
+                // Manuell aktualisieren
+                setStatus('🔄 Aktualisiere...', '#60a5fa');
+                loadData().then(() => {
+                    // Timer zurücksetzen
+                    resetAutoRefresh();
+                });
+            }
+        });
+
+        // ===== START =====
+        loadData();
+        startAutoRefresh();
+    </script>
+
+</body>
+</html>
